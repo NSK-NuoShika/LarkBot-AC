@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# 运行时产物
+data/
+log/
+*.db
+
+# 本地配置
+.env
+
+# Other
+.idea/
+.vscode/
