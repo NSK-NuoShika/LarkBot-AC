@@ -30,13 +30,13 @@ def test_dispatch_write(tmp_path, monkeypatch):
                         "http://127.0.0.1:9001/query", "200", "0"]
 
 
-def test_dispatch_write_timeout(tmp_path, monkeypatch):
+def test_dispatch_write_failed(tmp_path, monkeypatch):
     monkeypatch.setattr("logger.dispatch_log.LOG_DIR", str(tmp_path))
     log = DispatchLog()
-    log.write_timeout(100000, "基金", 100001, "查询", "text", "http://127.0.0.1:9001/query")
+    log.write_failed(100000, "基金", 100001, "查询", "text", "http://127.0.0.1:9001/query")
     cols = _read(tmp_path / "dispatch.log")[0].split("\t")
     assert len(cols) == 8
-    assert cols[-1] == "超时"
+    assert cols[-1] == "发送失败"
     assert cols[1:6] == ["100000", "基金", "100001", "查询", "text"]
 
 

@@ -20,10 +20,10 @@ class DispatchLog:
         except Exception:
             pass  # 日志失败不影响主流程
 
-    def write_timeout(self, program_id, program_name, command_id, cmd, msg_type, url) -> None:
+    def write_failed(self, program_id, program_name, command_id, cmd, msg_type, url) -> None:
         try:
             self._fh.write(tsv(now_iso(), program_id, program_name, command_id, cmd,
-                               msg_type, url, "超时") + "\n")
+                               msg_type, url, "发送失败") + "\n")
         except Exception:
             pass  # 日志失败不影响主流程
 
