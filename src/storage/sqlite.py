@@ -135,7 +135,13 @@ class Database:
                 "SELECT id, name, base_url FROM program WHERE heart_time <= ?",
                 (seconds,),
             ).fetchall()
-            dead = [dict(r) for r in rows]
+            dead = []
+            for r in rows:
+                d = dict(r)
+                d["command_count"] = conn.execute(
+                    "SELECT COUNT(*) FROM command WHERE program_id = ?", (d["id"],)
+                ).fetchone()[0]
+                dead.append(d)
             for d in dead:
                 conn.execute("DELETE FROM command WHERE program_id = ?", (d["id"],))
                 conn.execute("DELETE FROM program WHERE id = ?", (d["id"],))

@@ -88,6 +88,7 @@ def test_sweep_expired(db):
     dead = db.sweep_expired(int(time.time()) - 120)
     assert len(dead) == 1
     assert dead[0]["id"] == pid and dead[0]["name"] == "基金" and dead[0]["base_url"] == "http://x"
+    assert dead[0]["command_count"] == 1  # 含本次删除的接口数
     assert _count(db, "program") == 0
     assert _count(db, "command") == 0  # 级联删除接口
 

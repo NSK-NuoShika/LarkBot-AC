@@ -25,6 +25,6 @@ def register(program, base_url, cmd, path) -> dict:
     base_url = base_url.rstrip("/")
     program_id, command_id, overwritten = get_db().register_program(program, base_url, cmd, path)
 
-    get_loger().write("register", program_id, program, base_url, command_id, cmd)
+    get_loger().write_registry(program_id, program, base_url, command_id, cmd)
 
     return {"program_id": program_id, "overwritten": overwritten}

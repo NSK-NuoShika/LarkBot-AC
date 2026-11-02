@@ -13,7 +13,7 @@ class DispatchLog:
         # 追加模式、行缓冲
         self._fh = open(os.path.join(LOG_DIR, LOG_NAME), "a", encoding="utf-8", buffering=1)
 
-    def write(self, program_id, program_name, command_id, cmd, msg_type, url, http_status, biz_status) -> None:
+    def write_dispatch(self, program_id, program_name, command_id, cmd, msg_type, url, http_status, biz_status) -> None:
         try:
             self._fh.write(tsv(now_iso(), program_id, program_name, command_id, cmd,
                                msg_type, url, http_status, biz_status) + "\n")

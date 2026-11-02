@@ -21,7 +21,7 @@ def _read(path):
 def test_dispatch_write(tmp_path, monkeypatch):
     monkeypatch.setattr("logger.dispatch_log.LOG_DIR", str(tmp_path))
     log = DispatchLog()
-    log.write(100000, "基金", 100001, "查询", "text", "http://127.0.0.1:9001/query", 200, 0)
+    log.write_dispatch(100000, "基金", 100001, "查询", "text", "http://127.0.0.1:9001/query", 200, 0)
     lines = _read(tmp_path / "dispatch.log")
     assert len(lines) == 1
     cols = lines[0].split("\t")
@@ -73,25 +73,28 @@ def test_feishu_write_receive(tmp_path, monkeypatch):
 def test_registry_write(tmp_path, monkeypatch):
     monkeypatch.setattr("logger.registry_log.LOG_DIR", str(tmp_path))
     log = RegistryLog()
-    log.write("register", 100000, "基金", "http://127.0.0.1:9001", 100001, "查询")
-    log.write("dead", 100000, "基金", "http://127.0.0.1:9001", None, None)
-    lines = _read(tmp_path / "registry.log")
-    assert len(lines) == 2
-    c1 = lines[0].split("\t")
+    log.write_registry(100000, "基金", "http://127.0.0.1:9001", 100001, "查询")
+    c1 = _read(tmp_path / "registry.log")[0].split("\t")
     assert len(c1) == 7
     assert c1[1:] == ["register", "100000", "基金", "http://127.0.0.1:9001", "100001", "查询"]
-    c2 = lines[1].split("\t")
-    assert len(c2) == 7
-    assert c2[1:4] == ["dead", "100000", "基金"]
-    assert c2[5] == "" and c2[6] == ""
+
+
+def test_registry_write_dead(tmp_path, monkeypatch):
+    monkeypatch.setattr("logger.registry_log.LOG_DIR", str(tmp_path))
+    log = RegistryLog()
+    log.write_dead(100000, "基金", "http://127.0.0.1:9001", 2)
+    c2 = _read(tmp_path / "registry.log")[0].split("\t")
+    assert len(c2) == 6
+    assert c2[1:5] == ["dead", "100000", "基金", "http://127.0.0.1:9001"]
+    assert c2[5] == "2"  # 尾列为删除的接口数
 
 
 def test_append_mode(tmp_path, monkeypatch):
     monkeypatch.setattr("logger.dispatch_log.LOG_DIR", str(tmp_path))
     log = DispatchLog()
-    log.write(1, "a", 2, "b", "text", "u", 200, 0)
+    log.write_dispatch(1, "a", 2, "b", "text", "u", 200, 0)
     log2 = DispatchLog()  # 第二个实例追加，不覆盖
-    log2.write(3, "c", 4, "d", "text", "u", 404, 1)
+    log2.write_dispatch(3, "c", 4, "d", "text", "u", 404, 1)
     assert len(_read(tmp_path / "dispatch.log")) == 2
 
 
