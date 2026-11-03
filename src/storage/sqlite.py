@@ -5,8 +5,8 @@ import sqlite3
 import time
 from contextlib import contextmanager
 
-# 数据库路径
-_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# 数据库路径（本文件在 src/storage/ 下，上三级为项目根目录）
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DB_PATH = os.path.join(_PROJECT_ROOT, "data", "larkbow.db")
 
 _INIT_SQL = """

@@ -5,8 +5,8 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
-# .env 路径常量（相对项目根目录）
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# .env 路径常量（本文件在 src/config/ 下，上三级为项目根目录）
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ENV_PATH = os.path.join(PROJECT_ROOT, ".env")
 
 
