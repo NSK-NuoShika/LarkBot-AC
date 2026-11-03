@@ -8,6 +8,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 设计文档
 
+以下文档写明了本项目的接口约束和程序架构，是每次开发都必须仔细阅读并严格遵循的。
+
 - @docs/project/api.md
 - @docs/project/architecture.md
 - @docs/project/database.md
@@ -15,15 +17,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 开发行为约束
 
-- 严格按照项目文档和当次计划文档要求的进行开发，严禁未经允许擅自拓展。
+- 严格按照项目文档和当次计划文档中的接口设计和其他要求进行开发，严禁未经允许擅自拓展。
 - 对于开发中模糊的边界或需求，应当及时询问，等待我做出决定再进行开发，不得擅自做主，不得事后汇报。
 - 对于 docs/ 目录和其他 .md 文档的修改，必须请求我审批。
+- THIRD_PARTY_NOTICES.md 新增内容或修改内容注意与原有内容保持排版的一致性。
+- 程序迭代过程中某些接口在不断调整改变，因此 docs/plan 目录的往期开发计划已不具参考性，不建议读取往期文档，仅读取本次开发计划文档即可。
 
 ## Git 约束
 
-- 本地 git 由你进行管理，严禁操作远程仓库。使用 git 进行版本控制时，每次提交前必须经过我审批，在 git add 前向我汇报本次提交的文件和 commit 描述文本，待我同意后，才可以执行 git add 和 git commit 命令。
-- 不要一次性完成整个计划才提交 git。例如，你可以每新增一个功能提交一次，或是完成一个模块提交一次，亦或是修复一个bug提交一次。
-- git 提交应当在自动测试无误后进行，不得在自动测试前进行提交。
+- 本地 git 由你进行管理，严禁操作远程仓库。
+- 使用 git 进行版本控制时，每次提交前必须经过我审批，在 git add 前向我汇报本次提交的文件和 commit 描述文本，待我同意后，才可以执行 git add 和 git commit 命令。
+- 每次请求我审批 git 提交前先进行一次自动测试，我批准提交后再跑一次自动测试，无误后才执行 git add 和 git commit。
+- 不要一次性完成整个计划才提交 git。例如，你可以每新增一个功能提交一次，或是完成一个模块提交一次，亦或是修复一个 bug 提交一次。
 - 每次 git 提交前，必须检查当前改动文件有无需要 gitignore，若有，是否已在 .gitignore 文件中写明。
 - 开发时应先在 dev 分支下提交，当次开发任务全部完成并测试无误后经我同意方可合并到 master 分支，合并后删除 dev 分支。
 - 合并分支应当保持线性结构，建议使用 rebase 命令合并，避免 merge 破坏线性结构。
