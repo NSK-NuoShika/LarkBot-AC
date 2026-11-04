@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from downstream import heartbeat, register, sender
 
-app = FastAPI(title="LarkBow")
+app = FastAPI(title="LarkBot")
 
 
 class RegisterReq(BaseModel):
