@@ -23,6 +23,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - 对于 docs/ 目录和其他 .md 文档的修改，必须请求我审批。
 - THIRD_PARTY_NOTICES.md 新增内容或修改内容注意与原有内容保持排版的一致性。
 - 程序迭代过程中某些接口在不断调整改变，因此 docs/plan 目录的往期开发计划已不具参考性，不建议读取往期文档，仅读取本次开发计划文档即可。
+- git commit 信息和注释风格尽量与程序已有的保持风格一致。
 
 ## Git 约束
 
