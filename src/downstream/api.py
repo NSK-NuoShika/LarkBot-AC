@@ -4,10 +4,11 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from downstream import heartbeat, register, sender
 
-app = FastAPI(title="LarkBot")
+app = FastAPI(title="LarkBot", redirect_slashes=False)
 
 
 class RegisterReq(BaseModel):
@@ -39,9 +40,10 @@ def ok(code=0, message="ok", data=None):
     return {"code": code, "message": message, "data": data}
 
 
-def fail(http_status, code, message):
+def fail(http_status, code, message, headers=None):
     return JSONResponse(status_code=http_status,
-                        content={"code": code, "message": message, "data": None})
+                        content={"code": code, "message": message, "data": None},
+                        headers=headers)
 
 
 @app.exception_handler(RequestValidationError)
@@ -50,6 +52,16 @@ async def _validation_error(request: Request, exc: RequestValidationError):
         f"{'.'.join(str(x) for x in err['loc'])}: {err['msg']}" for err in exc.errors()
     )
     return fail(400, 4007, f"请求参数不合法: {summary}")
+
+
+@app.exception_handler(StarletteHTTPException)
+async def _http_error(request: Request, exc: StarletteHTTPException):
+    return fail(exc.status_code, 0, str(exc.detail), exc.headers)
+
+
+@app.exception_handler(Exception)
+async def _unhandled_error(request: Request, exc: Exception):
+    return fail(500, 5000, "Internal Server Error")
 
 
 @app.post("/register")

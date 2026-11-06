@@ -32,6 +32,36 @@ def test_health(client):
     assert r.json() == {"code": 0, "message": "ok", "data": None}
 
 
+def test_unknown_path_404_envelope(client):
+    r = client.get("/nope")
+    assert r.status_code == 404
+    assert r.json() == {"code": 0, "message": "Not Found", "data": None}
+
+
+def test_method_not_allowed_405_envelope(client):
+    r = client.get("/register")
+    assert r.status_code == 405
+    assert r.json() == {"code": 0, "message": "Method Not Allowed", "data": None}
+    assert "POST" in r.headers["allow"].split(", ")
+
+
+def test_trailing_slash_404_envelope(client):
+    r = client.post("/register/", json=_REGISTER)
+    assert r.status_code == 404
+    assert r.json() == {"code": 0, "message": "Not Found", "data": None}
+
+
+def test_unhandled_exception_500_envelope(tmp_env, monkeypatch):
+    def _boom(*args):
+        raise RuntimeError("boom")
+
+    monkeypatch.setattr("downstream.api.register.register", _boom)
+    c = TestClient(app, raise_server_exceptions=False)
+    r = c.post("/register", json=_REGISTER)
+    assert r.status_code == 500
+    assert r.json() == {"code": 5000, "message": "Internal Server Error", "data": None}
+
+
 def test_register_ok(client):
     r = client.post("/register", json=_REGISTER)
     assert r.status_code == 200
