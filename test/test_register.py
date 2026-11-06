@@ -31,6 +31,17 @@ def test_register_overwrite(tmp_env):
     assert r2["program_id"] == r1["program_id"]
 
 
+def test_register_new_cmd_not_overwrite(tmp_env):
+    r1 = register("基金", "http://a", "查询", "/q")
+    r2 = register("基金", "http://a", "净值", "/nav")
+    assert r2["overwritten"] is False
+    assert r2["program_id"] == r1["program_id"]
+
+    r3 = register("基金", "http://a", "净值", "/nav2")
+    assert r3["overwritten"] is True
+    assert r3["program_id"] == r1["program_id"]
+
+
 def test_empty_program(tmp_env):
     with pytest.raises(ValueError):
         register("  ", "http://127.0.0.1:9001", "查询", "/query")

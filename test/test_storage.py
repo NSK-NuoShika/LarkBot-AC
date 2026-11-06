@@ -46,9 +46,13 @@ def test_register_overwrite_same_cmd(db):
 
 def test_register_second_cmd_accumulates(db):
     db.register_program("基金", "http://x", "查询", "/q")
-    _, _, overwritten = db.register_program("基金", "http://x", "净值", "/nav")
-    assert overwritten is True
+    _, cid, overwritten = db.register_program("基金", "http://x", "净值", "/nav")
+    assert overwritten is False  # 同程序新增接口不算覆盖
     assert _count(db, "command") == 2
+
+    _, cid2, overwritten2 = db.register_program("基金", "http://x", "净值", "/nav2")
+    assert overwritten2 is True  # 程序与接口都相同才算覆盖
+    assert cid2 == cid
 
 
 def test_touch_heartbeat(db):

@@ -57,14 +57,13 @@ class Database:
 
     def register_program(self, name: str, base_url: str, cmd: str, path: str) -> tuple[int, int, bool]:
         """注册/覆盖程序与接口，返回 (program_id, command_id, overwritten)。
-
-        程序不存在则分配程序 id（100000-999999 递增，调用方保证不越界，不做校验）；
-        存在则更新 base_url/heart_time。同 program+cmd 更新 path，否则新分配接口 id。
+        overwritten 仅在程序与接口均已存在时为 True。
         """
         with self._conn() as conn:
             now = int(time.time())
             row = conn.execute("SELECT id FROM program WHERE name = ?", (name,)).fetchone()
-            if row is None:
+            program_exists = row is not None
+            if not program_exists:
                 program_id = conn.execute(
                     "SELECT COALESCE(MAX(id), 99999) + 1 FROM program"
                 ).fetchone()[0]
@@ -73,19 +72,18 @@ class Database:
                     " VALUES (?, ?, ?, ?, ?)",
                     (program_id, name, base_url, now, now),
                 )
-                overwritten = False
             else:
                 program_id = row[0]
                 conn.execute(
                     "UPDATE program SET base_url = ?, updated_at = ?, heart_time = ? WHERE id = ?",
                     (base_url, now, now, program_id),
                 )
-                overwritten = True
             crow = conn.execute(
                 "SELECT id FROM command WHERE program_id = ? AND cmd = ?",
                 (program_id, cmd),
             ).fetchone()
-            if crow is None:
+            command_exists = crow is not None
+            if not command_exists:
                 command_id = conn.execute(
                     "SELECT COALESCE(MAX(id), 99999) + 1 FROM command"
                 ).fetchone()[0]
@@ -96,7 +94,7 @@ class Database:
             else:
                 command_id = crow[0]
                 conn.execute("UPDATE command SET path = ? WHERE id = ?", (path, command_id))
-            return program_id, command_id, overwritten
+            return program_id, command_id, program_exists and command_exists
 
     def touch_heartbeat(self, name: str) -> bool:
         """刷新程序存活时间。"""

@@ -49,6 +49,15 @@ def test_register_overwrite_1001(client):
     assert body["data"]["program_id"] >= 100000
 
 
+def test_register_new_cmd_returns_0(client):
+    first = client.post("/register", json=_REGISTER).json()
+    r = client.post("/register", json=dict(_REGISTER, cmd="导出", path="/export"))
+    body = r.json()
+    assert r.status_code == 200
+    assert body["code"] == 0  # 同程序新增接口不是覆盖
+    assert body["data"]["program_id"] == first["data"]["program_id"]
+
+
 def test_register_invalid_base_url(client):
     bad = dict(_REGISTER, base_url="ftp://x")
     r = client.post("/register", json=bad)
