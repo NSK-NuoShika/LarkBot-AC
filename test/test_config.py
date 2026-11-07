@@ -58,6 +58,41 @@ def test_bad_int_raises_not_silent(monkeypatch):
         settings_mod.get_settings()
 
 
+@pytest.mark.parametrize(
+    "name, value",
+    [
+        ("PORT", "0"),
+        ("PORT", "65536"),
+        ("HEARTBEAT_TIMEOUT", "0"),
+        ("HEARTBEAT_TIMEOUT", "-1"),
+        ("SWEEP_INTERVAL", "0"),
+        ("SWEEP_INTERVAL", "-1"),
+        ("DISPATCH_WAIT", "0"),
+        ("DISPATCH_WAIT", "-1"),
+    ],
+)
+def test_out_of_range_raises(monkeypatch, name, value):
+    _set(monkeypatch, LARK_APP_ID="a", LARK_APP_SECRET="b", **{name: value})
+    with pytest.raises(RuntimeError, match=name):
+        settings_mod.get_settings()
+
+
+@pytest.mark.parametrize(
+    "name, value",
+    [
+        ("PORT", "1"),
+        ("PORT", "65535"),
+        ("HEARTBEAT_TIMEOUT", "1"),
+        ("SWEEP_INTERVAL", "1"),
+        ("DISPATCH_WAIT", "1"),
+    ],
+)
+def test_boundary_values_accepted(monkeypatch, name, value):
+    _set(monkeypatch, LARK_APP_ID="a", LARK_APP_SECRET="b", **{name: value})
+    s = settings_mod.get_settings()
+    assert getattr(s, name.lower()) == int(value)
+
+
 def test_cached_singleton(monkeypatch):
     _set(monkeypatch, LARK_APP_ID="a", LARK_APP_SECRET="b")
     assert settings_mod.get_settings() is settings_mod.get_settings()

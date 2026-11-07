@@ -40,12 +40,19 @@ def get_settings() -> Settings:
         overrides = {}
         for field in ("port", "heartbeat_timeout", "sweep_interval", "dispatch_wait"):
             raw = os.getenv(field.upper())
-            if raw:
-                try:
-                    overrides[field] = int(raw)
-                except ValueError:
-                    raise RuntimeError(f"配置项 {field.upper()} 不是合法整数: {raw}")
+            if not raw:
+                continue
+            try:
+                value = int(raw)
+                if field == "port":
+                    if not 1 <= value <= 65535:
+                        raise ValueError
+                elif value <= 0:
+                    raise ValueError
+            except ValueError:
+                raise RuntimeError(f"配置项 {field.upper()} 非法值: {raw}")
+            overrides[field] = value
 
         _settings = Settings(app_id=app_id, app_secret=app_secret, **overrides)
-        
+
     return _settings
