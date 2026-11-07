@@ -9,6 +9,9 @@ from contextlib import contextmanager
 _PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DB_PATH = os.path.join(_PROJECT_ROOT, "data", "larkbow.db")
 
+# 写锁等待秒数，避免并发写直接报 database is locked
+_BUSY_TIMEOUT = 5.0
+
 _INIT_SQL = """
 CREATE TABLE IF NOT EXISTS program (
     id         INTEGER PRIMARY KEY,
@@ -41,11 +44,25 @@ class Database:
         finally:
             conn.close()
 
+    @contextmanager
+    def _write_conn(self):
+        """写事务：BEGIN IMMEDIATE 在读取前取得写锁，保证读改写原子。"""
+        conn = self._connect()
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            yield conn
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            raise
+        finally:
+            conn.close()
+
     def _connect(self) -> sqlite3.Connection:
         parent = os.path.dirname(self._path)
         if parent:
             os.makedirs(parent, exist_ok=True)
-        conn = sqlite3.connect(self._path)
+        conn = sqlite3.connect(self._path, timeout=_BUSY_TIMEOUT)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA foreign_keys=ON")
         return conn
@@ -59,7 +76,7 @@ class Database:
         """注册/覆盖程序与接口，返回 (program_id, command_id, overwritten)。
         overwritten 仅在程序与接口均已存在时为 True。
         """
-        with self._conn() as conn:
+        with self._write_conn() as conn:
             now = int(time.time())
             row = conn.execute("SELECT id FROM program WHERE name = ?", (name,)).fetchone()
             program_exists = row is not None
@@ -128,7 +145,7 @@ class Database:
     def sweep_expired(self, seconds: int) -> list[dict]:
         """删除 heart_time 不晚于 seconds（调用方计算临界 Unix 秒，含该时刻）的程序，
         级联删除其接口，返回死程序清单。"""
-        with self._conn() as conn:
+        with self._write_conn() as conn:
             rows = conn.execute(
                 "SELECT id, name, base_url FROM program WHERE heart_time <= ?",
                 (seconds,),

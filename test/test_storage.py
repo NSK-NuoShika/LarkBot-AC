@@ -5,7 +5,9 @@ Database 直接使用模块级 DB_PATH，测试用 monkeypatch 把它指向 tmp_
 """
 
 import sqlite3
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 import pytest
 
@@ -53,6 +55,98 @@ def test_register_second_cmd_accumulates(db):
     _, cid2, overwritten2 = db.register_program("基金", "http://x", "净值", "/nav2")
     assert overwritten2 is True  # 程序与接口都相同才算覆盖
     assert cid2 == cid
+
+
+def test_register_concurrent_same_cmd(db):
+    """并发注册同一程序同一接口：全部成功且只落一条记录。"""
+    n = 8
+    barrier = threading.Barrier(n)
+
+    def call(_):
+        barrier.wait()
+        return db.register_program("基金", "http://x", "查询", "/q")
+
+    with ThreadPoolExecutor(max_workers=n) as executor:
+        results = list(executor.map(call, range(n)))
+
+    pid, cid, _ = results[0]
+    assert all((p, c) == (pid, cid) for p, c, _ in results)
+    assert _count(db, "program") == 1
+    assert _count(db, "command") == 1
+
+
+def test_register_concurrent_different_cmd(db):
+    """并发注册同一程序的不同接口：程序唯一，接口全部落库。"""
+    n = 8
+    barrier = threading.Barrier(n)
+
+    def call(i):
+        barrier.wait()
+        return db.register_program("基金", "http://x", f"cmd{i}", f"/p{i}")
+
+    with ThreadPoolExecutor(max_workers=n) as executor:
+        results = list(executor.map(call, range(n)))
+
+    assert len({p for p, _, _ in results}) == 1
+    assert len({c for _, c, _ in results}) == n
+    assert _count(db, "program") == 1
+    assert _count(db, "command") == n
+
+
+def test_sweep_holds_write_lock_between_select_and_delete(db, monkeypatch):
+    """清扫在 SELECT 与 DELETE 之间持写锁，心跳不能插入窗口。"""
+    db.register_program("基金", "http://x", "查询", "/q")
+    conn = sqlite3.connect(db._path)
+    try:
+        conn.execute("UPDATE program SET heart_time = ?", (int(time.time()) - 10_000,))
+        conn.commit()
+    finally:
+        conn.close()
+
+    deleting = threading.Event()
+    release = threading.Event()
+    orig_connect = db._connect
+
+    def trace(sql):
+        if sql.strip().upper().startswith("DELETE FROM COMMAND"):
+            deleting.set()
+            release.wait(2)
+
+    def connect():
+        c = orig_connect()
+        c.set_trace_callback(trace)
+        return c
+
+    monkeypatch.setattr(db, "_connect", connect)
+
+    sweep_result = {}
+
+    def run_sweep():
+        sweep_result["dead"] = db.sweep_expired(int(time.time()) - 120)
+
+    beat_result = {}
+    beat_thread = None
+    sweep_thread = threading.Thread(target=run_sweep)
+    sweep_thread.start()
+    try:
+        assert deleting.wait(2)
+
+        def run_beat():
+            beat_result["ok"] = db.touch_heartbeat("基金")
+
+        beat_thread = threading.Thread(target=run_beat)
+        beat_thread.start()
+        time.sleep(0.2)
+        assert "ok" not in beat_result  # 心跳被清扫的写锁挡住
+    finally:
+        release.set()
+        sweep_thread.join(2)
+        if beat_thread is not None:
+            beat_thread.join(2)
+
+    assert beat_result["ok"] is False
+    assert sweep_result["dead"]
+    assert db.get_program("基金") is None
 
 
 def test_touch_heartbeat(db):
