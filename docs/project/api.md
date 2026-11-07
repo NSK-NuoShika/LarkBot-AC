@@ -21,7 +21,7 @@
 | 4004 | 客户端 | base64 非法或解码后为空 |
 | 4005 | 客户端 | 文件超过 30MB |
 | 4006 | 客户端 | mp4 缺少 duration_ms |
-| 4007 | 客户端 | 请求参数不合法（字段缺失、类型错误） |
+| 4007 | 客户端 | 请求不合法（字段缺失、类型错误、取值非法或请求体不合法） |
 | 5000 | 服务端 | 本程序内部错误 |
 | 5001 | 服务端 | 保留，当前版本不返回 |
 
@@ -101,7 +101,7 @@ POST /send/text
 | target | string | 是 | 接收用户的 open_id |
 | file_name | string | 是 | 文件名，须带扩展名 |
 | content_base64 | string | 是 | 文件内容的标准 base64 编码 |
-| duration_ms | int | 仅 mp4 必填 | 视频时长（毫秒） |
+| duration_ms | int | 仅 mp4 必填 | 视频时长（毫秒）；非 mp4 忽略 |
 
 示例：
 
@@ -116,7 +116,7 @@ POST /send/file
 规则：
 - 文件解码后不超过 30MB。
 - 扩展名自动映射飞书文件类型：doc/docx→doc，xls/xlsx→xls，ppt/pptx→ppt，pdf→pdf，mp4→mp4，其余→stream。
-- 视频自动附带默认封面图。
+- mp4 自动附带默认封面图。
 
 ## 5. GET /health —— 探活
 
