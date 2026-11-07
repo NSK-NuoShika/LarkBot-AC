@@ -125,6 +125,19 @@ def test_send_file_stream_two_rows(tmp_feishu, monkeypatch):
     assert len(rows) == 2  # 发一个文件记两行（上传+发送）
 
 
+def test_send_file_non_mp4_duration_ignored(tmp_feishu, monkeypatch):
+    fake = _FakeClient()
+    monkeypatch.setattr(feishu_sender, "_get_client", lambda: fake)
+    task = {"kind": "file", "program": "基金", "program_id": 100000,
+            "target": "ou_u1", "file_name": "报表.xlsx",
+            "data": b"excel-bytes", "file_type": "xls", "duration_ms": 5000}
+
+    feishu_sender._send_file(task)
+
+    file_req = fake.calls[0][1]
+    assert file_req.request_body.duration is None
+
+
 def test_send_file_mp4_cover(tmp_feishu, monkeypatch):
     fake = _FakeClient()
     monkeypatch.setattr(feishu_sender, "_get_client", lambda: fake)

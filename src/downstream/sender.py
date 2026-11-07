@@ -66,8 +66,13 @@ def submit_file(program, target, file_name, content_base64, duration_ms) -> Subm
         return _file_fail(p, target, 4005, "文件超过 30MB")
 
     file_type = _FILE_TYPES.get(ext, "stream")
-    if file_type == "mp4" and duration_ms is None:
-        return _file_fail(p, target, 4006, "时长缺失")
+    if file_type == "mp4":
+        if duration_ms is None:
+            return _file_fail(p, target, 4006, "时长缺失")
+        if duration_ms <= 0:
+            return _file_fail(p, target, 4007, "duration_ms 必须大于 0")
+    else:
+        duration_ms = None  # 非 mp4 忽略时长
 
     queues.Q2.put({"kind": "file", "program": p["name"], "program_id": p["id"],
                    "target": target, "file_name": file_name, "data": data,

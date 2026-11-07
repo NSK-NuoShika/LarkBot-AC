@@ -111,7 +111,7 @@ def _upload_file(task):
         .file_type(task["file_type"]) \
         .file_name(task["file_name"]) \
         .file(io.BytesIO(task["data"]))
-    if task["duration_ms"] is not None:
+    if task["file_type"] == "mp4" and task["duration_ms"] is not None:
         body = body.duration(task["duration_ms"])
     request = CreateFileRequest.builder().request_body(body.build()).build()
 

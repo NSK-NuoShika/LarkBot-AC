@@ -96,6 +96,23 @@ def test_file_mp4_without_duration(tmp_send_log):
     assert queues.Q2.qsize() == 0
 
 
+@pytest.mark.parametrize("duration_ms", [0, -1])
+def test_file_mp4_non_positive_duration(tmp_send_log, duration_ms):
+    register("基金", "http://x", "查询", "/q")
+    res = submit_file("基金", "ou_u1", "视频.mp4", base64.b64encode(b"v"), duration_ms)
+    assert res.code == 4007
+    assert queues.Q2.qsize() == 0
+
+
+def test_file_non_mp4_duration_ignored(tmp_send_log):
+    register("基金", "http://x", "查询", "/q")
+    res = submit_file("基金", "ou_u1", "报表.xlsx", base64.b64encode(b"x"), 5000)
+    assert res.code == 0
+    task = queues.Q2.get()
+    assert task["file_type"] == "xls"
+    assert task["duration_ms"] is None
+
+
 def test_file_ok_xlsx(tmp_send_log):
     r = register("基金", "http://x", "查询", "/q")
     res = submit_file("基金", "ou_u1", "报表.XLSX", base64.b64encode("表格内容".encode("utf-8")), None)
